@@ -1,8 +1,11 @@
 local Library = {}
 
+local TweenService = game:GetService("TweenService")
+
 function Library:CreateWindow(config)
     local titleText = config.Title or "UI Library"
     local themeColor = config.ThemeColor or Color3.fromRGB(255, 50, 50)
+    local introText = config.IntroText or titleText
     
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
@@ -11,6 +14,38 @@ function Library:CreateWindow(config)
     gui.Name = "CustomLibraryGui"
     gui.ResetOnSpawn = false
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    local introFrame = Instance.new("Frame")
+    introFrame.Size = UDim2.new(0, 300, 0, 100)
+    introFrame.Position = UDim2.new(0.5, -150, 0.5, -50)
+    introFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    introFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
+    introFrame.BorderSizePixel = 1
+    introFrame.BackgroundTransparency = 1
+    introFrame.Parent = gui
+    
+    local introStroke = Instance.new("UIStroke")
+    introStroke.Color = Color3.fromRGB(55, 55, 55)
+    introStroke.Thickness = 1
+    introStroke.Transparency = 1
+    introStroke.Parent = introFrame
+    
+    local introBar = Instance.new("Frame")
+    introBar.Size = UDim2.new(0, 0, 0, 2)
+    introBar.Position = UDim2.new(0, 0, 1, -2)
+    introBar.BackgroundColor3 = themeColor
+    introBar.BorderSizePixel = 0
+    introBar.Parent = introFrame
+    
+    local introLabel = Instance.new("TextLabel")
+    introLabel.Size = UDim2.new(1, 0, 1, -2)
+    introLabel.BackgroundTransparency = 1
+    introLabel.Text = introText
+    introLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+    introLabel.TextSize = 14
+    introLabel.Font = Enum.Font.Code
+    introLabel.TextTransparency = 1
+    introLabel.Parent = introFrame
     
     local main = Instance.new("Frame")
     main.Size = UDim2.new(0, 480, 0, 320)
@@ -21,6 +56,7 @@ function Library:CreateWindow(config)
     main.Active = true
     main.Draggable = true
     main.ClipsDescendants = true
+    main.Visible = false
     main.Parent = gui
     
     local outline = Instance.new("UIStroke")
@@ -125,6 +161,25 @@ function Library:CreateWindow(config)
     
     closeBtn.MouseButton1Click:Connect(function()
         gui:Destroy()
+    end)
+    
+    task.spawn(function()
+        TweenService:Create(introFrame, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(introStroke, TweenInfo.new(0.4), {Transparency = 0}):Play()
+        TweenService:Create(introLabel, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
+        task.wait(0.4)
+        local barTween = TweenService:Create(introBar, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 2)})
+        barTween:Play()
+        barTween.Completed:Wait()
+        task.wait(0.3)
+        TweenService:Create(introFrame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(introStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
+        TweenService:Create(introBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        local fadeOut = TweenService:Create(introLabel, TweenInfo.new(0.3), {TextTransparency = 1})
+        fadeOut:Play()
+        fadeOut.Completed:Wait()
+        introFrame:Destroy()
+        main.Visible = true
     end)
     
     local Window = {}
