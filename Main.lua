@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 local Library = {}
@@ -93,10 +94,16 @@ function Library:CreateWindow(config)
     closeBtn.Font = Enum.Font.Code
     closeBtn.Parent = controls
 
-    local tabNav = Instance.new("Frame")
-    tabNav.Size = UDim2.new(1, -16, 0, 20)
+    local tabNav = Instance.new("ScrollingFrame")
+    tabNav.Size = UDim2.new(1, -16, 0, 22)
     tabNav.Position = UDim2.new(0, 8, 0, 24)
     tabNav.BackgroundTransparency = 1
+    tabNav.BorderSizePixel = 0
+    tabNav.ScrollBarThickness = 0
+    tabNav.ScrollingDirection = Enum.ScrollingDirection.X
+    tabNav.ElasticBehavior = Enum.ElasticBehavior.Always
+    tabNav.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabNav.AutomaticCanvasSize = Enum.AutomaticSize.X
     tabNav.Parent = main
 
     local tabNavList = Instance.new("UIListLayout")
@@ -104,10 +111,22 @@ function Library:CreateWindow(config)
     tabNavList.SortOrder = Enum.SortOrder.LayoutOrder
     tabNavList.Padding = UDim.new(0, 4)
     tabNavList.Parent = tabNav
+
+    local isHovered = false
+    tabNav.MouseEnter:Connect(function() isHovered = true end)
+    tabNav.MouseLeave:Connect(function() isHovered = false end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if isHovered and input.UserInputType == Enum.UserInputType.MouseWheel then
+            local maxScroll = math.max(0, tabNav.AbsoluteCanvasSize.X - tabNav.AbsoluteWindowSize.X)
+            local targetPos = math.clamp(tabNav.CanvasPosition.X - (input.Position.Z * 40), 0, maxScroll)
+            tabNav.CanvasPosition = Vector2.new(targetPos, 0)
+        end
+    end)
     
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -16, 1, -50)
-    container.Position = UDim2.new(0, 8, 0, 46)
+    container.Size = UDim2.new(1, -16, 1, -52)
+    container.Position = UDim2.new(0, 8, 0, 48)
     container.BackgroundTransparency = 1
     container.Parent = main
     
@@ -216,11 +235,12 @@ function Library:CreateWindow(config)
 
     function Window:CreateTab(tabName)
         local tabBtn = Instance.new("TextButton")
-        tabBtn.Size = UDim2.new(0, 70, 1, 0)
+        tabBtn.Size = UDim2.new(0, 0, 1, 0)
+        tabBtn.AutomaticSize = Enum.AutomaticSize.X
         tabBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
         tabBtn.BorderColor3 = Color3.fromRGB(40, 40, 40)
         tabBtn.BorderSizePixel = 1
-        tabBtn.Text = tabName
+        tabBtn.Text = " " .. tabName .. " "
         tabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
         tabBtn.TextSize = 11
         tabBtn.Font = Enum.Font.Code
