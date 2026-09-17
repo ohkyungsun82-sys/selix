@@ -1,14 +1,13 @@
-local Library = {}
-
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+local Library = {}
 
 function Library:CreateWindow(config)
     local titleText = config.Title or "UI Library"
     local themeColor = config.ThemeColor or Color3.fromRGB(255, 50, 50)
     local introText = config.IntroText or titleText
-    
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
     
     local gui = Instance.new("ScreenGui")
     gui.Name = "CustomLibraryGui"
@@ -123,10 +122,22 @@ function Library:CreateWindow(config)
     closeBtn.TextSize = 13
     closeBtn.Font = Enum.Font.Code
     closeBtn.Parent = controls
+
+    local tabNav = Instance.new("Frame")
+    tabNav.Size = UDim2.new(1, -16, 0, 20)
+    tabNav.Position = UDim2.new(0, 8, 0, 24)
+    tabNav.BackgroundTransparency = 1
+    tabNav.Parent = main
+
+    local tabNavList = Instance.new("UIListLayout")
+    tabNavList.FillDirection = Enum.FillDirection.Horizontal
+    tabNavList.SortOrder = Enum.SortOrder.LayoutOrder
+    tabNavList.Padding = UDim.new(0, 4)
+    tabNavList.Parent = tabNav
     
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, -20, 1, -35)
-    container.Position = UDim2.new(0, 10, 0, 28)
+    container.Size = UDim2.new(1, -16, 1, -50)
+    container.Position = UDim2.new(0, 8, 0, 46)
     container.BackgroundTransparency = 1
     container.Parent = main
     
@@ -134,14 +145,24 @@ function Library:CreateWindow(config)
     local isMaximized = false
     local normalSize = UDim2.new(0, 480, 0, 320)
     local normalPos = UDim2.new(0.5, -240, 0.5, -160)
+    local tweenFast = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
     minBtn.MouseButton1Click:Connect(function()
         isMinimized = not isMinimized
-        container.Visible = not isMinimized
         if isMinimized then
-            main.Size = UDim2.new(main.Size.X.Scale, main.Size.X.Offset, 0, 20)
+            container.Visible = false
+            tabNav.Visible = false
+            TweenService:Create(main, tweenFast, {Size = UDim2.new(main.Size.X.Scale, main.Size.X.Offset, 0, 20)}):Play()
         else
-            main.Size = isMaximized and UDim2.new(1, 0, 1, 0) or normalSize
+            local targetSize = isMaximized and UDim2.new(1, 0, 1, 0) or normalSize
+            local tw = TweenService:Create(main, tweenFast, {Size = targetSize})
+            tw:Play()
+            tw.Completed:Connect(function()
+                if not isMinimized then
+                    container.Visible = true
+                    tabNav.Visible = true
+                end
+            end)
         end
     end)
     
@@ -151,16 +172,21 @@ function Library:CreateWindow(config)
         if isMaximized then
             normalPos = main.Position
             normalSize = main.Size
-            main.Position = UDim2.new(0, 0, 0, 0)
-            main.Size = UDim2.new(1, 0, 1, 0)
+            TweenService:Create(main, tweenFast, {Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 1, 0)}):Play()
         else
-            main.Position = normalPos
-            main.Size = normalSize
+            TweenService:Create(main, tweenFast, {Position = normalPos, Size = normalSize}):Play()
         end
     end)
     
     closeBtn.MouseButton1Click:Connect(function()
-        gui:Destroy()
+        local tw = TweenService:Create(main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(main.Position.X.Scale, main.Position.X.Offset + (main.AbsoluteSize.X / 2), main.Position.Y.Scale, main.Position.Y.Offset + (main.AbsoluteSize.Y / 2))
+        })
+        tw:Play()
+        tw.Completed:Connect(function()
+            gui:Destroy()
+        end)
     end)
     
     task.spawn(function()
@@ -182,95 +208,138 @@ function Library:CreateWindow(config)
         main.Visible = true
     end)
     
-    local Window = {}
-    
-    function Window:CreateSection(name, pos, size)
-        local box = Instance.new("Frame")
-        box.Size = size or UDim2.new(0.5, -5, 1, 0)
-        box.Position = pos or UDim2.new(0, 0, 0, 0)
-        box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        box.BorderColor3 = Color3.fromRGB(40, 40, 40)
-        box.BorderSizePixel = 1
-        box.Parent = container
-        
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0, 0, 0, 12)
-        lbl.Position = UDim2.new(0, 8, 0, -6)
-        lbl.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        lbl.BorderSizePixel = 0
-        lbl.Text = " " .. name .. " "
-        lbl.TextColor3 = Color3.fromRGB(180, 180, 180)
-        lbl.TextSize = 11
-        lbl.Font = Enum.Font.Code
-        lbl.AutomaticSize = Enum.AutomaticSize.X
-        lbl.Parent = box
-        
-        local list = Instance.new("UIListLayout")
-        list.SortOrder = Enum.SortOrder.LayoutOrder
-        list.Padding = UDim.new(0, 6)
-        list.Parent = box
-        
-        local pad = Instance.new("UIPadding")
-        pad.PaddingTop = UDim.new(0, 14)
-        pad.PaddingLeft = UDim.new(0, 8)
-        pad.PaddingRight = UDim.new(0, 8)
-        pad.Parent = box
-        
-        local Section = {}
-        
-        function Section:AddToggle(text, callback)
-            local f = Instance.new("Frame")
-            f.Size = UDim2.new(1, 0, 0, 16)
-            f.BackgroundTransparency = 1
-            f.Parent = box
-            
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(0, 10, 0, 10)
-            btn.Position = UDim2.new(0, 0, 0.5, -5)
-            btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            btn.BorderColor3 = Color3.fromRGB(55, 55, 55)
-            btn.BorderSizePixel = 1
-            btn.Text = ""
-            btn.Parent = f
-            
-            local tLbl = Instance.new("TextLabel")
-            tLbl.Size = UDim2.new(1, -16, 1, 0)
-            tLbl.Position = UDim2.new(0, 16, 0, 0)
-            tLbl.BackgroundTransparency = 1
-            tLbl.Text = text
-            tLbl.TextColor3 = Color3.fromRGB(160, 160, 160)
-            tLbl.TextSize = 11
-            tLbl.Font = Enum.Font.Code
-            tLbl.TextXAlignment = Enum.TextXAlignment.Left
-            tLbl.Parent = f
-            
-            local state = false
-            btn.MouseButton1Click:Connect(function()
-                state = not state
-                btn.BackgroundColor3 = state and themeColor or Color3.fromRGB(30, 30, 30)
-                tLbl.TextColor3 = state and Color3.fromRGB(240, 240, 240) or Color3.fromRGB(160, 160, 160)
-                if callback then callback(state) end
-            end)
+    local Window = { Tabs = {}, FirstTab = nil }
+
+    function Window:CreateTab(tabName)
+        local tabBtn = Instance.new("TextButton")
+        tabBtn.Size = UDim2.new(0, 70, 1, 0)
+        tabBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+        tabBtn.BorderColor3 = Color3.fromRGB(40, 40, 40)
+        tabBtn.BorderSizePixel = 1
+        tabBtn.Text = tabName
+        tabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+        tabBtn.TextSize = 11
+        tabBtn.Font = Enum.Font.Code
+        tabBtn.Parent = tabNav
+
+        local tabContent = Instance.new("Frame")
+        tabContent.Size = UDim2.new(1, 0, 1, 0)
+        tabContent.BackgroundTransparency = 1
+        tabContent.Visible = false
+        tabContent.Parent = container
+
+        local Tab = {}
+
+        local function activateTab()
+            for _, t in pairs(Window.Tabs) do
+                t.Button.TextColor3 = Color3.fromRGB(150, 150, 150)
+                t.Button.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+                t.Content.Visible = false
+            end
+            tabBtn.TextColor3 = Color3.fromRGB(240, 240, 240)
+            tabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            tabContent.Visible = true
         end
-        
-        function Section:AddButton(text, callback)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 20)
-            btn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
-            btn.BorderColor3 = Color3.fromRGB(45, 45, 45)
-            btn.BorderSizePixel = 1
-            btn.Text = text
-            btn.TextColor3 = Color3.fromRGB(180, 180, 180)
-            btn.TextSize = 11
-            btn.Font = Enum.Font.Code
-            btn.Parent = box
-            
-            btn.MouseButton1Click:Connect(function()
-                if callback then callback() end
-            end)
+
+        tabBtn.MouseButton1Click:Connect(activateTab)
+
+        table.insert(Window.Tabs, { Button = tabBtn, Content = tabContent })
+
+        if not Window.FirstTab then
+            Window.FirstTab = Tab
+            activateTab()
         end
-        
-        return Section
+
+        function Tab:CreateSection(name, pos, size)
+            local box = Instance.new("Frame")
+            box.Size = size or UDim2.new(0.5, -5, 1, 0)
+            box.Position = pos or UDim2.new(0, 0, 0, 0)
+            box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            box.BorderColor3 = Color3.fromRGB(40, 40, 40)
+            box.BorderSizePixel = 1
+            box.Parent = tabContent
+            
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(0, 0, 0, 12)
+            lbl.Position = UDim2.new(0, 8, 0, -6)
+            lbl.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            lbl.BorderSizePixel = 0
+            lbl.Text = " " .. name .. " "
+            lbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+            lbl.TextSize = 11
+            lbl.Font = Enum.Font.Code
+            lbl.AutomaticSize = Enum.AutomaticSize.X
+            lbl.Parent = box
+            
+            local list = Instance.new("UIListLayout")
+            list.SortOrder = Enum.SortOrder.LayoutOrder
+            list.Padding = UDim.new(0, 6)
+            list.Parent = box
+            
+            local pad = Instance.new("UIPadding")
+            pad.PaddingTop = UDim.new(0, 14)
+            pad.PaddingLeft = UDim.new(0, 8)
+            pad.PaddingRight = UDim.new(0, 8)
+            pad.Parent = box
+            
+            local Section = {}
+            
+            function Section:AddToggle(text, callback)
+                local f = Instance.new("Frame")
+                f.Size = UDim2.new(1, 0, 0, 16)
+                f.BackgroundTransparency = 1
+                f.Parent = box
+                
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(0, 10, 0, 10)
+                btn.Position = UDim2.new(0, 0, 0.5, -5)
+                btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                btn.BorderColor3 = Color3.fromRGB(55, 55, 55)
+                btn.BorderSizePixel = 1
+                btn.Text = ""
+                btn.Parent = f
+                
+                local tLbl = Instance.new("TextLabel")
+                tLbl.Size = UDim2.new(1, -16, 1, 0)
+                tLbl.Position = UDim2.new(0, 16, 0, 0)
+                tLbl.BackgroundTransparency = 1
+                tLbl.Text = text
+                tLbl.TextColor3 = Color3.fromRGB(160, 160, 160)
+                tLbl.TextSize = 11
+                tLbl.Font = Enum.Font.Code
+                tLbl.TextXAlignment = Enum.TextXAlignment.Left
+                tLbl.Parent = f
+                
+                local state = false
+                btn.MouseButton1Click:Connect(function()
+                    state = not state
+                    btn.BackgroundColor3 = state and themeColor or Color3.fromRGB(30, 30, 30)
+                    tLbl.TextColor3 = state and Color3.fromRGB(240, 240, 240) or Color3.fromRGB(160, 160, 160)
+                    if callback then callback(state) end
+                end)
+            end
+            
+            function Section:AddButton(text, callback)
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, 0, 0, 20)
+                btn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+                btn.BorderColor3 = Color3.fromRGB(45, 45, 45)
+                btn.BorderSizePixel = 1
+                btn.Text = text
+                btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+                btn.TextSize = 11
+                btn.Font = Enum.Font.Code
+                btn.Parent = box
+                
+                btn.MouseButton1Click:Connect(function()
+                    if callback then callback() end
+                end)
+            end
+            
+            return Section
+        end
+
+        return Tab
     end
     
     function Window:Destroy()
@@ -280,4 +349,27 @@ function Library:CreateWindow(config)
     return Window
 end
 
-return Library
+local Window = Library:CreateWindow({
+    Title = "Selix Hub | Rival",
+    IntroText = "Loading Selix Hub...",
+    ThemeColor = Color3.fromRGB(0, 170, 255)
+})
+
+local MainTab = Window:CreateTab("Main")
+local SettingsTab = Window:CreateTab("Settings")
+
+local CombatSection = MainTab:CreateSection("Combat", UDim2.new(0, 0, 0, 0), UDim2.new(0.5, -5, 1, 0))
+local VisualSection = MainTab:CreateSection("Visuals", UDim2.new(0.5, 5, 0, 0), UDim2.new(0.5, -5, 1, 0))
+
+CombatSection:AddToggle("Aimbot", function(state)
+    print("Aimbot:", state)
+end)
+
+VisualSection:AddButton("Click Test", function()
+    print("Clicked")
+end)
+
+local ConfigSection = SettingsTab:CreateSection("Config", UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 1, 0))
+ConfigSection:AddButton("Close UI", function()
+    Window:Destroy()
+end)
