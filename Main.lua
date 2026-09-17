@@ -12,6 +12,10 @@ function Library:CreateWindow(config)
     local enableIntro = config.Intro
     if enableIntro == nil then enableIntro = true end
     
+    local keySystem = config.KeySystem or false
+    local correctKey = config.Key or ""
+    local keyLink = config.KeyLink or ""
+    
     local gui = Instance.new("ScreenGui")
     gui.Name = "CustomLibraryGui"
     gui.ResetOnSpawn = false
@@ -26,7 +30,7 @@ function Library:CreateWindow(config)
     main.Active = true
     main.Draggable = true
     main.ClipsDescendants = true
-    main.Visible = not enableIntro
+    main.Visible = false
     main.Parent = gui
     
     local outline = Instance.new("UIStroke")
@@ -178,40 +182,40 @@ function Library:CreateWindow(config)
         end)
     end)
     
-    if enableIntro then
-        local introFrame = Instance.new("Frame")
-        introFrame.Size = UDim2.new(0, 300, 0, 100)
-        introFrame.Position = UDim2.new(0.5, -150, 0.5, -50)
-        introFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-        introFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
-        introFrame.BorderSizePixel = 1
-        introFrame.BackgroundTransparency = 1
-        introFrame.Parent = gui
-        
-        local introStroke = Instance.new("UIStroke")
-        introStroke.Color = Color3.fromRGB(55, 55, 55)
-        introStroke.Thickness = 1
-        introStroke.Transparency = 1
-        introStroke.Parent = introFrame
-        
-        local introBar = Instance.new("Frame")
-        introBar.Size = UDim2.new(0, 0, 0, 2)
-        introBar.Position = UDim2.new(0, 0, 1, -2)
-        introBar.BackgroundColor3 = themeColor
-        introBar.BorderSizePixel = 0
-        introBar.Parent = introFrame
-        
-        local introLabel = Instance.new("TextLabel")
-        introLabel.Size = UDim2.new(1, 0, 1, -2)
-        introLabel.BackgroundTransparency = 1
-        introLabel.Text = introText
-        introLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
-        introLabel.TextSize = 14
-        introLabel.Font = Enum.Font.Code
-        introLabel.TextTransparency = 1
-        introLabel.Parent = introFrame
+    local function openMainHub()
+        if enableIntro then
+            local introFrame = Instance.new("Frame")
+            introFrame.Size = UDim2.new(0, 300, 0, 100)
+            introFrame.Position = UDim2.new(0.5, -150, 0.5, -50)
+            introFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+            introFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
+            introFrame.BorderSizePixel = 1
+            introFrame.BackgroundTransparency = 1
+            introFrame.Parent = gui
+            
+            local introStroke = Instance.new("UIStroke")
+            introStroke.Color = Color3.fromRGB(55, 55, 55)
+            introStroke.Thickness = 1
+            introStroke.Transparency = 1
+            introStroke.Parent = introFrame
+            
+            local introBar = Instance.new("Frame")
+            introBar.Size = UDim2.new(0, 0, 0, 2)
+            introBar.Position = UDim2.new(0, 0, 1, -2)
+            introBar.BackgroundColor3 = themeColor
+            introBar.BorderSizePixel = 0
+            introBar.Parent = introFrame
+            
+            local introLabel = Instance.new("TextLabel")
+            introLabel.Size = UDim2.new(1, 0, 1, -2)
+            introLabel.BackgroundTransparency = 1
+            introLabel.Text = introText
+            introLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+            introLabel.TextSize = 14
+            introLabel.Font = Enum.Font.Code
+            introLabel.TextTransparency = 1
+            introLabel.Parent = introFrame
 
-        task.spawn(function()
             TweenService:Create(introFrame, TweenInfo.new(0.4), {BackgroundTransparency = 0}):Play()
             TweenService:Create(introStroke, TweenInfo.new(0.4), {Transparency = 0}):Play()
             TweenService:Create(introLabel, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
@@ -228,7 +232,139 @@ function Library:CreateWindow(config)
             fadeOut.Completed:Wait()
             introFrame:Destroy()
             main.Visible = true
+        else
+            main.Visible = true
+        end
+    end
+    
+    if keySystem then
+        local keyFrame = Instance.new("Frame")
+        keyFrame.Size = UDim2.new(0, 320, 0, 160)
+        keyFrame.Position = UDim2.new(0.5, -160, 0.5, -80)
+        keyFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+        keyFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
+        keyFrame.BorderSizePixel = 1
+        keyFrame.Active = true
+        keyFrame.Draggable = true
+        keyFrame.Parent = gui
+
+        local keyStroke = Instance.new("UIStroke")
+        keyStroke.Color = Color3.fromRGB(55, 55, 55)
+        keyStroke.Thickness = 1
+        keyStroke.Parent = keyFrame
+
+        local keyBar = Instance.new("Frame")
+        keyBar.Size = UDim2.new(1, 0, 0, 20)
+        keyBar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+        keyBar.BorderSizePixel = 0
+        keyBar.Parent = keyFrame
+
+        local keyAccent = Instance.new("Frame")
+        keyAccent.Size = UDim2.new(1, 0, 0, 2)
+        keyAccent.Position = UDim2.new(0, 0, 1, -2)
+        keyAccent.BackgroundColor3 = themeColor
+        keyAccent.BorderSizePixel = 0
+        keyAccent.Parent = keyBar
+
+        local keyTitle = Instance.new("TextLabel")
+        keyTitle.Size = UDim2.new(1, -10, 1, 0)
+        keyTitle.Position = UDim2.new(0, 8, 0, 0)
+        keyTitle.BackgroundTransparency = 1
+        keyTitle.Text = titleText .. " - Key System"
+        keyTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+        keyTitle.TextSize = 11
+        keyTitle.Font = Enum.Font.Code
+        keyTitle.TextXAlignment = Enum.TextXAlignment.Left
+        keyTitle.Parent = keyBar
+
+        local keyClose = Instance.new("TextButton")
+        keyClose.Size = UDim2.new(0, 20, 1, -2)
+        keyClose.Position = UDim2.new(1, -20, 0, 0)
+        keyClose.BackgroundTransparency = 1
+        keyClose.Text = "×"
+        keyClose.TextColor3 = Color3.fromRGB(180, 180, 180)
+        keyClose.TextSize = 13
+        keyClose.Font = Enum.Font.Code
+        keyClose.Parent = keyBar
+
+        keyClose.MouseButton1Click:Connect(function()
+            gui:Destroy()
         end)
+
+        local keyInput = Instance.new("TextBox")
+        keyInput.Size = UDim2.new(1, -24, 0, 30)
+        keyInput.Position = UDim2.new(0, 12, 0, 36)
+        keyInput.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+        keyInput.BorderColor3 = Color3.fromRGB(45, 45, 45)
+        keyInput.BorderSizePixel = 1
+        keyInput.PlaceholderText = "Enter Key..."
+        keyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+        keyInput.Text = ""
+        keyInput.TextColor3 = Color3.fromRGB(220, 220, 220)
+        keyInput.TextSize = 11
+        keyInput.Font = Enum.Font.Code
+        keyInput.ClearTextOnFocus = false
+        keyInput.Parent = keyFrame
+
+        local checkBtn = Instance.new("TextButton")
+        checkBtn.Size = UDim2.new(0.5, -16, 0, 24)
+        checkBtn.Position = UDim2.new(0, 12, 0, 76)
+        checkBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+        checkBtn.BorderColor3 = Color3.fromRGB(45, 45, 45)
+        checkBtn.BorderSizePixel = 1
+        checkBtn.Text = "Submit"
+        checkBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+        checkBtn.TextSize = 11
+        checkBtn.Font = Enum.Font.Code
+        checkBtn.Parent = keyFrame
+
+        local getBtn = Instance.new("TextButton")
+        getBtn.Size = UDim2.new(0.5, -16, 0, 24)
+        getBtn.Position = UDim2.new(0.5, 4, 0, 76)
+        getBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+        getBtn.BorderColor3 = Color3.fromRGB(45, 45, 45)
+        getBtn.BorderSizePixel = 1
+        getBtn.Text = "Get Key"
+        getBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+        getBtn.TextSize = 11
+        getBtn.Font = Enum.Font.Code
+        getBtn.Parent = keyFrame
+
+        local keyStatus = Instance.new("TextLabel")
+        keyStatus.Size = UDim2.new(1, -24, 0, 20)
+        keyStatus.Position = UDim2.new(0, 12, 0, 115)
+        keyStatus.BackgroundTransparency = 1
+        keyStatus.Text = ""
+        keyStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+        keyStatus.TextSize = 10
+        keyStatus.Font = Enum.Font.Code
+        keyStatus.Parent = keyFrame
+
+        getBtn.MouseButton1Click:Connect(function()
+            if setclipboard then
+                setclipboard(keyLink)
+                keyStatus.TextColor3 = Color3.fromRGB(80, 255, 80)
+                keyStatus.Text = "Copied link to clipboard!"
+            else
+                keyStatus.TextColor3 = Color3.fromRGB(255, 180, 80)
+                keyStatus.Text = "Clipboard not supported"
+            end
+        end)
+
+        checkBtn.MouseButton1Click:Connect(function()
+            if keyInput.Text == correctKey then
+                keyStatus.TextColor3 = Color3.fromRGB(80, 255, 80)
+                keyStatus.Text = "Key Verified!"
+                task.wait(0.5)
+                keyFrame:Destroy()
+                task.spawn(openMainHub)
+            else
+                keyStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
+                keyStatus.Text = "Invalid Key!"
+            end
+        end)
+    else
+        task.spawn(openMainHub)
     end
     
     local Window = { Tabs = {}, FirstTab = nil }
