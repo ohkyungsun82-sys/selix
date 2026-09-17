@@ -1,11 +1,35 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Drawing API 지원 여부 확인
+local DrawingAvailable = (Drawing and Drawing.new) ~= nil
+
+local Hypershot = {
+    Aimbot = false,
+    Wallhack = false,
+    FovSize = 100,
+    TeamCheck = true
+}
+
+local FovCircle = nil
+if DrawingAvailable then
+    pcall(function()
+        FovCircle = Drawing.new("Circle")
+        FovCircle.Visible = false
+        FovCircle.Filled = false
+        FovCircle.Color = Color3.fromRGB(255, 50, 50)
+        FovCircle.Thickness = 1
+        FovCircle.Transparency = 0.8
+        FovCircle.Radius = Hypershot.FovSize
+    end)
+end
 
 local Library = {}
 
--- 키 인증 기록 파일명 (계정별 구분)
 local function getKeyFileName(correctKey)
     return "SelixKey_" .. tostring(LocalPlayer.UserId) .. "_" .. tostring(correctKey:gsub("[^%w]", "")) .. ".json"
 end
@@ -127,7 +151,6 @@ function Library:CreateWindow(config)
     tabNav.BorderSizePixel = 0
     tabNav.ScrollBarThickness = 0
     tabNav.ScrollingDirection = Enum.ScrollingDirection.X
-    tabNav.ElasticBehavior = Enum.ElasticBehavior.Always
     tabNav.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabNav.AutomaticCanvasSize = Enum.AutomaticSize.X
     tabNav.Parent = main
@@ -259,151 +282,11 @@ function Library:CreateWindow(config)
         end
     end
     
-    if keySystem and not isKeyVerified then
-        local keyFrame = Instance.new("Frame")
-        keyFrame.Size = UDim2.new(0, 320, 0, 160)
-        keyFrame.Position = UDim2.new(0.5, -160, 0.5, -80)
-        keyFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-        keyFrame.BorderColor3 = Color3.fromRGB(40, 40, 40)
-        keyFrame.BorderSizePixel = 1
-        keyFrame.Active = true
-        keyFrame.Draggable = true
-        keyFrame.Parent = gui
-
-        local keyStroke = Instance.new("UIStroke")
-        keyStroke.Color = Color3.fromRGB(55, 55, 55)
-        keyStroke.Thickness = 1
-        keyStroke.Parent = keyFrame
-
-        local keyBar = Instance.new("Frame")
-        keyBar.Size = UDim2.new(1, 0, 0, 20)
-        keyBar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-        keyBar.BorderSizePixel = 0
-        keyBar.Parent = keyFrame
-
-        local keyAccent = Instance.new("Frame")
-        keyAccent.Size = UDim2.new(1, 0, 0, 2)
-        keyAccent.Position = UDim2.new(0, 0, 1, -2)
-        keyAccent.BackgroundColor3 = themeColor
-        keyAccent.BorderSizePixel = 0
-        keyAccent.Parent = keyBar
-
-        local keyTitle = Instance.new("TextLabel")
-        keyTitle.Size = UDim2.new(1, -10, 1, 0)
-        keyTitle.Position = UDim2.new(0, 8, 0, 0)
-        keyTitle.BackgroundTransparency = 1
-        keyTitle.Text = titleText .. " - Key System"
-        keyTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-        keyTitle.TextSize = 11
-        keyTitle.Font = Enum.Font.Code
-        keyTitle.TextXAlignment = Enum.TextXAlignment.Left
-        keyTitle.Parent = keyBar
-
-        local keyClose = Instance.new("TextButton")
-        keyClose.Size = UDim2.new(0, 20, 1, -2)
-        keyClose.Position = UDim2.new(1, -20, 0, 0)
-        keyClose.BackgroundTransparency = 1
-        keyClose.Text = "×"
-        keyClose.TextColor3 = Color3.fromRGB(180, 180, 180)
-        keyClose.TextSize = 13
-        keyClose.Font = Enum.Font.Code
-        keyClose.Parent = keyBar
-
-        keyClose.MouseButton1Click:Connect(function()
-            gui:Destroy()
-        end)
-
-        local keyInput = Instance.new("TextBox")
-        keyInput.Size = UDim2.new(1, -24, 0, 30)
-        keyInput.Position = UDim2.new(0, 12, 0, 36)
-        keyInput.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-        keyInput.BorderColor3 = Color3.fromRGB(45, 45, 45)
-        keyInput.BorderSizePixel = 1
-        keyInput.PlaceholderText = "Enter Key..."
-        keyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-        keyInput.Text = ""
-        keyInput.TextColor3 = Color3.fromRGB(220, 220, 220)
-        keyInput.TextSize = 11
-        keyInput.Font = Enum.Font.Code
-        keyInput.ClearTextOnFocus = false
-        keyInput.Parent = keyFrame
-
-        local checkBtn = Instance.new("TextButton")
-        checkBtn.Size = UDim2.new(0.5, -16, 0, 24)
-        checkBtn.Position = UDim2.new(0, 12, 0, 76)
-        checkBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
-        checkBtn.BorderColor3 = Color3.fromRGB(45, 45, 45)
-        checkBtn.BorderSizePixel = 1
-        checkBtn.Text = "Submit"
-        checkBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-        checkBtn.TextSize = 11
-        checkBtn.Font = Enum.Font.Code
-        checkBtn.Parent = keyFrame
-
-        local getBtn = Instance.new("TextButton")
-        getBtn.Size = UDim2.new(0.5, -16, 0, 24)
-        getBtn.Position = UDim2.new(0.5, 4, 0, 76)
-        getBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
-        getBtn.BorderColor3 = Color3.fromRGB(45, 45, 45)
-        getBtn.BorderSizePixel = 1
-        getBtn.Text = "Get Key"
-        getBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-        getBtn.TextSize = 11
-        getBtn.Font = Enum.Font.Code
-        getBtn.Parent = keyFrame
-
-        local keyStatus = Instance.new("TextLabel")
-        keyStatus.Size = UDim2.new(1, -24, 0, 20)
-        keyStatus.Position = UDim2.new(0, 12, 0, 115)
-        keyStatus.BackgroundTransparency = 1
-        keyStatus.Text = ""
-        keyStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
-        keyStatus.TextSize = 10
-        keyStatus.Font = Enum.Font.Code
-        keyStatus.Parent = keyFrame
-
-        getBtn.MouseButton1Click:Connect(function()
-            if setclipboard then
-                setclipboard(keyLink)
-                keyStatus.TextColor3 = Color3.fromRGB(80, 255, 80)
-                keyStatus.Text = "Copied link to clipboard!"
-            else
-                keyStatus.TextColor3 = Color3.fromRGB(255, 180, 80)
-                keyStatus.Text = "Clipboard not supported"
-            end
-        end)
-
-        checkBtn.MouseButton1Click:Connect(function()
-            if keyInput.Text == correctKey then
-                keyStatus.TextColor3 = Color3.fromRGB(80, 255, 80)
-                keyStatus.Text = "Key Verified!"
-                if writefile then
-                    pcall(writefile, keyFileName, "Authenticated")
-                end
-                task.wait(0.5)
-                keyFrame:Destroy()
-                task.spawn(openMainHub)
-            else
-                keyStatus.TextColor3 = Color3.fromRGB(255, 80, 80)
-                keyStatus.Text = "Invalid Key!"
-            end
-        end)
-    else
-        task.spawn(openMainHub)
-    end
+    task.spawn(openMainHub)
     
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.KeyCode == Enum.KeyCode.K then
             main.Visible = not main.Visible
-        end
-    end)
-
-    task.spawn(function()
-        while gui.Parent do
-            if main.Visible then
-                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-            end
-            task.wait(0.1)
         end
     end)
 
@@ -450,10 +333,10 @@ function Library:CreateWindow(config)
             activateTab()
         end
 
-        function Tab:CreateSection(name, pos, size)
+        function Tab:CreateSection(name)
             local box = Instance.new("Frame")
-            box.Size = size or UDim2.new(0.5, -5, 1, 0)
-            box.Position = pos or UDim2.new(0, 0, 0, 0)
+            box.Size = UDim2.new(0.5, -5, 1, 0)
+            box.Position = UDim2.new(0, 0, 0, 0)
             box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             box.BorderColor3 = Color3.fromRGB(40, 40, 40)
             box.BorderSizePixel = 1
@@ -519,34 +402,95 @@ function Library:CreateWindow(config)
                 end)
             end
             
-            function Section:AddButton(text, callback)
-                local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(1, 0, 0, 20)
-                btn.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
-                btn.BorderColor3 = Color3.fromRGB(45, 45, 45)
-                btn.BorderSizePixel = 1
-                btn.Text = text
-                btn.TextColor3 = Color3.fromRGB(180, 180, 180)
-                btn.TextSize = 11
-                btn.Font = Enum.Font.Code
-                btn.Parent = box
-                
-                btn.MouseButton1Click:Connect(function()
-                    if callback then callback() end
-                end)
-            end
-            
             return Section
         end
 
         return Tab
     end
-    
-    function Window:Destroy()
-        gui:Destroy()
-    end
-    
+
     return Window
 end
 
-return Library
+local function getClosestPlayer()
+    local target = nil
+    local shortestDist = Hypershot.FovSize
+    local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if not Hypershot.TeamCheck or player.Team ~= LocalPlayer.Team then
+                local hrp = player.Character.HumanoidRootPart
+                local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                if onScreen then
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        target = player.Character.Head
+                    end
+                end
+            end
+        end
+    end
+    return target
+end
+
+RunService.RenderStepped:Connect(function()
+    if FovCircle then
+        FovCircle.Visible = Hypershot.Aimbot
+        FovCircle.Radius = Hypershot.FovSize
+        FovCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    end
+
+    if Hypershot.Aimbot then
+        local target = getClosestPlayer()
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local highlight = player.Character:FindFirstChild("HypershotHighlight")
+            if Hypershot.Wallhack then
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "HypershotHighlight"
+                    highlight.Adornee = player.Character
+                    highlight.FillColor = Color3.fromRGB(255, 50, 50)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.Parent = player.Character
+                end
+            else
+                if highlight then
+                    highlight:Destroy()
+                end
+            end
+        end
+    end
+end)
+
+local Window = Library:CreateWindow({
+    Title = "Hypershot Hub",
+    ThemeColor = Color3.fromRGB(255, 50, 50),
+    Intro = true,
+    IntroText = "Hypershot",
+    KeySystem = false
+})
+
+local Tab = Window:CreateTab("Combat")
+local Section = Tab:CreateSection("Aimbot")
+
+Section:AddToggle("Enable Aimbot", function(state)
+    Hypershot.Aimbot = state
+end)
+
+Section:AddToggle("Team Check", function(state)
+    Hypershot.TeamCheck = state
+end)
+
+local VisualTab = Window:CreateTab("Visuals")
+local VisualSection = VisualTab:CreateSection("ESP")
+
+VisualSection:AddToggle("Wallhack (ESP)", function(state)
+    Hypershot.Wallhack = state
+end)
