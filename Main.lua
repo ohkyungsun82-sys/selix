@@ -5,6 +5,11 @@ local LocalPlayer = Players.LocalPlayer
 
 local Library = {}
 
+-- 키 인증 기록 파일명 (계정별 구분)
+local function getKeyFileName(correctKey)
+    return "SelixKey_" .. tostring(LocalPlayer.UserId) .. "_" .. tostring(correctKey:gsub("[^%w]", "")) .. ".json"
+end
+
 function Library:CreateWindow(config)
     local titleText = config.Title or "UI Library"
     local themeColor = config.ThemeColor or Color3.fromRGB(255, 50, 50)
@@ -16,11 +21,24 @@ function Library:CreateWindow(config)
     local correctKey = config.Key or ""
     local keyLink = config.KeyLink or ""
     
+    local keyFileName = getKeyFileName(correctKey)
+    local isKeyVerified = false
+
+    if keySystem then
+        if writefile and readfile and isfile and isfile(keyFileName) then
+            local success, content = pcall(readfile, keyFileName)
+            if success and content == "Authenticated" then
+                isKeyVerified = true
+            end
+        end
+    else
+        isKeyVerified = true
+    end
+    
     local gui = Instance.new("ScreenGui")
     gui.Name = "CustomLibraryGui"
     gui.ResetOnSpawn = false
     gui.IgnoreGuiInset = true
-    -- [추가] 모든 GUI 위에 표시되도록 ZIndexBehavior 설정 및 높은 DisplayOrder 지정
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.DisplayOrder = 999999
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -241,7 +259,7 @@ function Library:CreateWindow(config)
         end
     end
     
-    if keySystem then
+    if keySystem and not isKeyVerified then
         local keyFrame = Instance.new("Frame")
         keyFrame.Size = UDim2.new(0, 320, 0, 160)
         keyFrame.Position = UDim2.new(0.5, -160, 0.5, -80)
@@ -359,6 +377,9 @@ function Library:CreateWindow(config)
             if keyInput.Text == correctKey then
                 keyStatus.TextColor3 = Color3.fromRGB(80, 255, 80)
                 keyStatus.Text = "Key Verified!"
+                if writefile then
+                    pcall(writefile, keyFileName, "Authenticated")
+                end
                 task.wait(0.5)
                 keyFrame:Destroy()
                 task.spawn(openMainHub)
@@ -371,7 +392,6 @@ function Library:CreateWindow(config)
         task.spawn(openMainHub)
     end
     
-    -- [추가] 마우스 고정 방지 및 K키 토글 기능 구현
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.KeyCode == Enum.KeyCode.K then
             main.Visible = not main.Visible
