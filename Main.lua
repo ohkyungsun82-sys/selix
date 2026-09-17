@@ -19,6 +19,10 @@ function Library:CreateWindow(config)
     local gui = Instance.new("ScreenGui")
     gui.Name = "CustomLibraryGui"
     gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    -- [추가] 모든 GUI 위에 표시되도록 ZIndexBehavior 설정 및 높은 DisplayOrder 지정
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.DisplayOrder = 999999
     gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     
     local main = Instance.new("Frame")
@@ -367,6 +371,22 @@ function Library:CreateWindow(config)
         task.spawn(openMainHub)
     end
     
+    -- [추가] 마우스 고정 방지 및 K키 토글 기능 구현
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.KeyCode == Enum.KeyCode.K then
+            main.Visible = not main.Visible
+        end
+    end)
+
+    task.spawn(function()
+        while gui.Parent do
+            if main.Visible then
+                UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+            end
+            task.wait(0.1)
+        end
+    end)
+
     local Window = { Tabs = {}, FirstTab = nil }
 
     function Window:CreateTab(tabName)
